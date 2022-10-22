@@ -143,7 +143,7 @@ function sanitizeGithubWorkflowName(name) {
 function exportCredentials(params){
   // Configure the AWS CLI and AWS SDKs using environment variables and set them as secrets.
   // Setting the credentials as secrets masks them in Github Actions logs
-  const {accessKeyId, secretAccessKey, sessionToken} = params;
+  const {accessKeyId, secretAccessKey, sessionToken, profile} = params;
 
   // AWS_ACCESS_KEY_ID:
   // Specifies an AWS access key associated with an IAM user or role
@@ -154,6 +154,10 @@ function exportCredentials(params){
   // Specifies the secret key associated with the access key. This is essentially the "password" for the access key.
   core.setSecret(secretAccessKey);
   core.exportVariable('AWS_SECRET_ACCESS_KEY', secretAccessKey);
+
+  if(profile) {
+    core.exportVariable('AWS_PROFILE', profile)
+  }
 
   // AWS_SESSION_TOKEN:
   // Specifies the session token value that is required if you are using temporary security credentials.
@@ -264,6 +268,7 @@ async function run() {
   try {
     // Get inputs
     const accessKeyId = core.getInput('aws-access-key-id', { required: false });
+    const profile = core.getInput('profile', { required: false })
     const audience = core.getInput('audience', { required: false });
     const secretAccessKey = core.getInput('aws-secret-access-key', { required: false });
     const region = core.getInput('aws-region', { required: true });
@@ -305,7 +310,7 @@ async function run() {
         throw new Error("'aws-secret-access-key' must be provided if 'aws-access-key-id' is provided");
       }
 
-      exportCredentials({accessKeyId, secretAccessKey, sessionToken});
+      exportCredentials({accessKeyId, secretAccessKey, sessionToken, profile});
     }
 
     // Attempt to load credentials from the GitHub OIDC provider.

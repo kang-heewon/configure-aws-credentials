@@ -14,6 +14,12 @@ inputs:
       It is optional if running in a self-hosted environment that already has AWS credentials,
       for example on an EC2 instance.
     required: false
+  profile:
+    description: >-
+      AWS Profile. This input is required if running in the GitHub hosted environment.
+      It is optional if running in a self-hosted environment that already has AWS credentials,
+      for example on an EC2 instance.
+    required: false
   aws-secret-access-key:
     description: >-
       AWS Secret Access Key. This input is required if running in the GitHub hosted environment.

@@ -6,6 +6,7 @@ const { run, withSleep, reset }  = require('./index.js');
 jest.mock('@actions/core');
 
 const FAKE_ACCESS_KEY_ID = 'MY-AWS-ACCESS-KEY-ID';
+const FAKE_PROFILE = 'MY-AWS-PROFILE'
 const FAKE_SECRET_ACCESS_KEY = 'MY-AWS-SECRET-ACCESS-KEY';
 const FAKE_SESSION_TOKEN = 'MY-AWS-SESSION-TOKEN';
 const FAKE_STS_ACCESS_KEY_ID = 'STS-AWS-ACCESS-KEY-ID';
@@ -292,6 +293,28 @@ describe('Configure AWS Credentials', () => {
         expect(core.setOutput).toHaveBeenCalledWith('aws-account-id', FAKE_ACCOUNT_ID);
         expect(core.setSecret).toHaveBeenCalledWith(FAKE_ACCOUNT_ID);
     });
+
+    test('profile is optional', async () => {
+        const mockInputs = {...CREDS_INPUTS, 'aws-region': 'eu-west-1', 'profile': FAKE_PROFILE};
+        core.getInput = jest
+            .fn()
+            .mockImplementation(mockGetInput(mockInputs));
+
+        await run();
+        expect(mockStsAssumeRole).toHaveBeenCalledTimes(0);
+        expect(core.exportVariable).toHaveBeenCalledTimes(5);
+        expect(core.setSecret).toHaveBeenCalledTimes(3);
+        expect(core.exportVariable).toHaveBeenCalledWith('AWS_ACCESS_KEY_ID', FAKE_ACCESS_KEY_ID);
+        expect(core.setSecret).toHaveBeenCalledWith(FAKE_ACCESS_KEY_ID);
+        expect(core.exportVariable).toHaveBeenCalledWith('AWS_SECRET_ACCESS_KEY', FAKE_SECRET_ACCESS_KEY);
+        expect(core.setSecret).toHaveBeenCalledWith(FAKE_SECRET_ACCESS_KEY);
+        expect(core.exportVariable).toHaveBeenCalledWith('AWS_DEFAULT_REGION', 'eu-west-1');
+        expect(core.exportVariable).toHaveBeenCalledWith('AWS_REGION', 'eu-west-1');
+        expect(core.exportVariable).toHaveBeenCalledWith('AWS_PROFILE', FAKE_PROFILE);
+        expect(core.setOutput).toHaveBeenCalledWith('aws-account-id', FAKE_ACCOUNT_ID);
+        expect(core.setSecret).toHaveBeenCalledWith(FAKE_ACCOUNT_ID);
+    });
+
 
     test('existing env var creds are cleared', async () => {
         const mockInputs = {...CREDS_INPUTS, 'aws-region': 'eu-west-1'};
