@@ -189,7 +189,7 @@ async function exportAccountId(maskAccountId, region) {
   return accountId;
 }
 
-function loadCredentials() {
+function loadCredentials(profile = 'default') {
   // Force the SDK to re-resolve credentials with the default provider chain.
   //
   // This action typically sets credentials in the environment via environment variables.
@@ -204,20 +204,15 @@ function loadCredentials() {
   // from an assume-role call in this action.
   aws.config.credentials = null;
 
-  return new Promise((resolve, reject) => {
-    aws.config.getCredentials((err) => {
-      if (err) {
-        reject(err);
-      }
-      resolve(aws.config.credentials);
-    })
+  return new Promise((resolve) => {
+    resolve(new aws.SharedIniFileCredentials({profile}));
   });
 }
 
-async function validateCredentials(expectedAccessKeyId) {
+async function validateCredentials(expectedAccessKeyId, profile) {
   let credentials;
   try {
-    credentials = await loadCredentials();
+    credentials = await loadCredentials(profile);
 
     if (!credentials.accessKeyId) {
       throw new Error('Access key ID empty after loading credentials');
@@ -328,7 +323,7 @@ async function run() {
       // cases where this action is on a self-hosted runner that doesn't have credentials
       // configured correctly, and cases where the user intended to provide input
       // credentials but the secrets inputs resolved to empty strings.
-      await validateCredentials(accessKeyId);
+      await validateCredentials(accessKeyId, profile);
 
       sourceAccountId = await exportAccountId(maskAccountId, region);
     }
@@ -353,7 +348,7 @@ async function run() {
       //  is set to `true` then we are NOT in a self-hosted runner.
       // Second: Customer provided credentials manually (IAM User keys stored in GH Secrets)
       if (!process.env.GITHUB_ACTIONS || accessKeyId) {
-        await validateCredentials(roleCredentials.accessKeyId);
+        await validateCredentials(roleCredentials.accessKeyId, profile);
       }
       await exportAccountId(maskAccountId, region);
     }
